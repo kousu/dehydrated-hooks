@@ -1,6 +1,5 @@
 # hooks.d plugin for dehydrated.io
 
-
 https://dehydrated.io is a great simple [ACME client](https://letsencrypt.org/docs/client-options/).
 
 It has a `conf.d` directory so that packages can coordinate installing plugins,
@@ -24,11 +23,12 @@ install -o root -g root hooks.sh /var/lib/dehydrated/hooks/    # or wherever you
 
 #### Debian/Ubuntu
 
-TODO
+Pick out the appropriate .deb file for your version from https://github.com/kousu/dehydrated-hooks/releases/ and install it by:
 
-#### ArchLinux
-
-TODO
+```
+wget https://github.com/kousu/dehydrated-hooks/releases/download/1.0.0/dehydrated-hooks_1.1.0-0ubuntu1.focal_all.deb
+apt-get install -y ./dehydrated-hooks_1.0.0-0ubuntu1.bionic_all.deb
+```
 
 ## Usage
 
