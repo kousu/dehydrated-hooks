@@ -49,3 +49,59 @@ and one that should run after everything should be 'zz-'. But ideally you won't 
 To test your hooks non-destructively...
 
 TODO
+
+## Examples
+
+Once installed, here are some things you can do with this:
+
+### Keeping certs under `/etc/ssl/`
+
+```
+#!/bin/sh
+# /var/lib/dehydrated/hooks/deploy-cert.d/00-install
+# install certificates from dehydrated into /etc/
+# certs form part of system config, so they belong under /etc, though the *originals* live under /var/
+# Another solution would be to set CERTDIR=/etc/dehydrated/certs/ but that's sort of weird too.
+
+domain="$1"
+privkey="$2"
+cert="$3"
+fullchain="$4"
+
+cp "$fullchain" /etc/ssl/certs/"$domain".pem
+cp "$privkey" /etc/ssl/private/"$domain".key
+```
+
+```
+#!/bin/sh
+# /var/lib/dehydrated/hooks/deploy-cert.d/01-etckeeper
+# meant to be used with 00-install
+domain="$1"
+etckeeper commit "Renew cert for $domain."
+```
+
+### Make all your daemons pick up the new certificates
+
+```
+#!/bin/sh
+# /var/lib/dehydrated/hooks/deploy-cert.d/nginx
+systemctl reload nginx
+```
+
+```
+#!/bin/sh
+# /var/lib/dehydrated/hooks/deploy-cert.d/prosody
+prosodyctl reload
+```
+
+```
+#!/bin/sh
+# /var/lib/dehydrated/hooks/deploy-cert.d/rsyslogd
+systemctl reload rsyslogd
+```
+
+You could put all of these into one line, but then your services become interdependent and that makes them more fragile: if you to replace nginx with apache you need to remember to take it out of your hook script; this way, you just `rm /var/lib/dehydrated/hooks/deploy-cert.d/nginx` and replace it with a `/var/lib/dehydrated/hooks/deploy-cert.d/apache`.
+
+### Use a specific DNS-01 for different subdomains
+
+TODO
