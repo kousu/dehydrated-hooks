@@ -1,0 +1,77 @@
+name: Publish Linux Packages
+
+on:
+  # publish from the Releases page:
+  release:
+    types: [published]
+  # publish from the Actions page:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version (e.g. 2.0.3)'
+        required: true
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        plat:
+          - 'ubuntu:18.04'
+          - 'ubuntu:20.04'
+          - 'debian:sid'
+          #- 'archlinux' # dehydrated.io isn't yet packaged for arch so we can't depend on it!
+
+          # pacur builds their own container images
+          # maybe we should use those directly?
+          # but they come with an entrypoint to worry about
+      fail-fast: false
+    container: ${{matrix.plat}}
+
+    steps:
+      - run: echo "${{toJSON(github.event)}}"
+      - uses: actions/checkout@v2
+
+      # deps
+      - run: apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y build-essential reprepro rsync wget zip git mercurial
+        if: ${{ contains(matrix.plat, 'ubuntu') || contains(matrix.plat, 'debian') }}
+      - run: pacman -Sy --noconfirm base-devel go git mercurial wget rsync tar zip sudo
+        if: ${{ contains(matrix.plat, 'archlinux') }}
+      - run: yum -y install rpm-build rpm-sign openssl createrepo rsync make automake gcc wget zip git mercurial
+        if: ${{ contains(matrix.plat, 'redhat') || contains(matrix.plat, 'centos') }}
+
+      - uses: actions/setup-go@v2
+        with:
+          go-version: '^1.13.1'
+
+      # https://github.com/actions/setup-go/issues/110, https://medium.com/the-go-journey/x509-certificate-signed-by-unknown-authority-running-a-go-app-inside-a-docker-container-a12869337eb
+      - run: apt-get update && apt-get install -y ca-certificates
+        if: ${{ contains(matrix.plat, 'ubuntu') || contains(matrix.plat, 'debian') }}
+      - run: pacman -Sy --noconfirm ca-certificates
+        if: ${{ contains(matrix.plat, 'archlinux') }}
+      - run: yum -y install ca-certificates
+        if: ${{ contains(matrix.plat, 'redhat') || contains(matrix.plat, 'centos') }}
+
+      - run: go get github.com/pacur/pacur
+      # pacur has a silly idea of how to do I/O: it EXPECTS to be run
+      # under docker and does all it's input and output in /pacur.
+      - run: mkdir -p /pacur && cp dist/PKGBUILD /pacur
+      #- run: sudo sed -i 's/pkgver=.*/pkgver=${{}}/' # TODO: edit the PKGBUILD to point at the new version
+
+      - run: |
+          . /etc/os-release
+          case "$ID" in
+            arch) ID="archlinux";;
+          esac
+          test -n "${VERSION_CODENAME}" && ID="${ID}-${VERSION_CODENAME}" # make sure the resulting filenames distinguish ubuntu focal from ubuntu eoan, etc
+          echo "ID is $ID"
+          pacur build "$ID"
+      - run: rm /pacur/PKGBUILD # avoid uploading this
+      - uses: softprops/action-gh-release@v1
+        with:
+          files: '/pacur/*'
+          fail_on_unmatched_files: true
+          tag_name: ${{ github.event.inputs.version }} # in the workflow_dispatch case, make a new tag from the given input; in the published release case, this will be empty and will fall back to updating that release.
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

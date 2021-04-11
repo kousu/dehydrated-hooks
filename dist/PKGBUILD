@@ -1,0 +1,40 @@
+targets=(
+    "debian"
+    "ubuntu"
+    # I would target other OSes, but only if dehydrated itself is already packaged for them, but I'm not going to.
+)
+pkgname="dehydrated-hooks"
+pkgver="0.9.9"
+pkgrel="1"
+pkgdesc="hook.d support for dehydrated"
+arch="all"
+pkgdesclong=(
+    "ummm stuff"
+)
+maintainer="<nick@kousu.ca>"
+license=("MIT")
+section="admin"
+url="https://github.com/kousu/${pkgname}"
+sources=(
+    "${url}/archive/${pkgver}.tar.gz"
+)
+hashsums=(
+    "SKIP" # TODO
+)
+depends=(
+    "dehydrated"
+)
+
+build() {
+    # nothing to build, it's just a shell script
+    exit 0
+}
+
+package() {
+    cd "${pkgname}-${pkgver}"
+    mkdir -p ${pkgdir}/etc/dehydrated/conf.d
+    install -o root -g root conf.d/hooks.sh ${pkgdir}/etc/dehydrated/conf.d
+
+    mkdir -p ${pkgdir}/var/lib/dehydrated/hooks/
+    install -o root -g root hooks.sh ${pkgdir}/var/lib/dehydrated/hooks/
+}
