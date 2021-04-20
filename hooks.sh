@@ -10,13 +10,17 @@ run_parts() {
 
   dir="$1"; shift
   if [ -d "$dir" ]; then
-    ls -1 "${dir}" 2>/dev/null | while read prog; do
-      if [ -x "$prog" ]; then
-        "${prog}" "$@"
+    ls -1 "${dir}" | sort | while read prog; do
+      if [ -x "${dir}/${prog}" ]; then
+        echo "Running ${dir}/${prog}"
+        "${dir}/${prog}" "$@"
       fi
     done
   fi
 }
 
 operation="$1"; shift
-run_parts "${BASEDIR}"/hooks/"${operation}".d/ "$@"
+(
+  cd "${BASEDIR}"/hooks/ # pretty-print the script that's running by only passing the relevant subpath to run_parts
+  run_parts "${operation}".d/ "$@"
+)
