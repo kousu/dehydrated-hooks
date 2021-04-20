@@ -26,4 +26,3 @@ case "${operation}" in
 esac
 
 run_parts "${BASEDIR}"/hooks/"${operation}".d/ "$@"
-~                                                    
