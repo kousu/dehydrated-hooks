@@ -22,5 +22,5 @@ run_parts() {
 operation="$1"; shift
 (
   cd "${BASEDIR}"/hooks/ # pretty-print the script that's running by only passing the relevant subpath to run_parts
-  run_parts "${operation}".d/ "$@"
+  run_parts "${operation}".d "$@" | sed 's/^/ + /'
 )
