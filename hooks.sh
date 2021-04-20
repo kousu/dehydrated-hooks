@@ -19,10 +19,4 @@ run_parts() {
 }
 
 operation="$1"; shift
-case "${operation}" in
-  clean_challenge|deploy_challenge|deploy_cert)
-    "${operation}" "$@"
-    ;;
-esac
-
 run_parts "${BASEDIR}"/hooks/"${operation}".d/ "$@"
