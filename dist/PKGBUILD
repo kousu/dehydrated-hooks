@@ -4,7 +4,7 @@ targets=(
     # I would target other OSes, but only if dehydrated itself is already packaged for them, but I'm not going to.
 )
 pkgname="dehydrated-hooks"
-pkgver="0.9.9"
+pkgver="0.9.99"
 pkgrel="1"
 pkgdesc="hook.d support for dehydrated"
 arch="all"
